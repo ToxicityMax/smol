@@ -35,12 +35,22 @@ func GenShortUrl(ctx *gin.Context) {
 
 	// create url object and save in db
 	var expiration_date time.Time
+	var short string
+
 	if (body.ExpirationDate != time.Time{}) {
 		expiration_date = body.ExpirationDate
+	} else {
+		expiration_date = time.Now()
+		expiration_date = expiration_date.AddDate(0, 0, 2)
+
 	}
-	expiration_date = time.Now()
-	expiration_date = expiration_date.AddDate(0, 0, 2)
-	short := helpers.Create_unique_string(3)
+	if body.ShortUrl != "" {
+		if err := models.DB.Where("short_url = ?", body.ShortUrl).First(&short).Error; err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Choose another"})
+		}
+	} else {
+		short = helpers.Create_unique_string(3)
+	}
 
 	url := models.URL{
 		LongUrl:        body.LongUrl,
@@ -60,7 +70,35 @@ func Redirect(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Url"})
 		return
 	}
-	url.Visited += 1
-	models.DB.Save(&url)
+	if url.Password != "" {
+		ctx.JSON(http.StatusOK, gin.H{"message": "This url is protected by password. Send a post request with the password as a key",
+			"redirect_url": "/verify"})
+	} else {
+		url.Visited += 1
+		models.DB.Save(&url)
+	}
 	ctx.Redirect(http.StatusMovedPermanently, url.LongUrl)
+}
+
+func PasswordVerify(ctx *gin.Context) {
+	body := struct {
+		Password string `json:"password" binding:"required"`
+	}{}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var url models.URL
+	if err := models.DB.Where("short_url = ?", ctx.Param("slug")).First(&url).Error; err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Url"})
+		return
+	}
+	if url.Password != body.Password {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect Password"})
+	} else {
+		url.Visited += 1
+		models.DB.Save(&url)
+		ctx.Redirect(http.StatusMovedPermanently, url.LongUrl)
+	}
 }
