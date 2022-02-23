@@ -22,22 +22,22 @@ func Create_unique_string(length int) string {
 func StartCron() {
 	cron := gocron.NewScheduler(time.UTC)
 	logger.Info("Starting Cron job...")
-	cron.Every(10).
-		Seconds().Do(
-			func() {
-				var urls []models.URL
-				var count int
+	cron.Every(1).
+		Hours().Do(
+		func() {
+			var urls []models.URL
+			var count int
 
-				if err := models.DB.
-					Find(&urls, "expiration_date >= ?", time.Now()). //query the db for expired links
-					Count(&count).                                   // number of expired links
-					Delete(&urls).Error; err != nil {                // deleting expired links
-					logger.Error(fmt.Sprintf("Some error in query --> %s ", err))
-					return
-				} else if count > 0 {
-					logger.Info(fmt.Sprintf("Removed %d expired links...", count))
-					return
-				}
-			})
+			if err := models.DB.
+				Find(&urls, "expiration_date >= ?", time.Now()). //query the db for expired links
+				Count(&count).                                   // number of expired links
+				Delete(&urls).Error; err != nil {                // deleting expired links
+				logger.Error(fmt.Sprintf("Some error in query --> %s ", err))
+				return
+			} else if count > 0 {
+				logger.Info(fmt.Sprintf("Removed %d expired links...", count))
+				return
+			}
+		})
 	cron.StartAsync()
 }
