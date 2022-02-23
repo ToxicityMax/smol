@@ -8,22 +8,21 @@ import (
 	"time"
 )
 
-// GetallUrls get all urls
+// GetallUrls  get all urls
 func GetallUrls(ctx *gin.Context) {
 	var urls []models.URL
 	models.DB.Find(&urls)
 	ctx.JSON(http.StatusOK, urls)
 }
 
-type gen_short_url_serializer struct {
-	LongUrl        string    `json:"url" binding:"required"`
-	ShortUrl       string    `json:"short_url" default:""`
-	Password       string    `json:"password" default:""`
-	ExpirationDate time.Time `json:"expiration_date"`
-}
-
 // GenShortUrl create shortned url
 func GenShortUrl(ctx *gin.Context) {
+	type gen_short_url_serializer struct {
+		LongUrl        string    `json:"url" binding:"required"`
+		ShortUrl       string    `json:"short_url" default:""`
+		Password       string    `json:"password" default:""`
+		ExpirationDate time.Time `json:"expiration_date"`
+	}
 	// validate input
 	var body gen_short_url_serializer
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -64,6 +63,7 @@ func GenShortUrl(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ctx.Request.Host+"/"+url.ShortUrl)
 }
 
+// Redirect to long_url
 func Redirect(ctx *gin.Context) {
 	var url models.URL
 	if err := models.DB.Where("short_url = ?", ctx.Param("slug")).First(&url).Error; err != nil {
@@ -87,6 +87,7 @@ func Redirect(ctx *gin.Context) {
 	ctx.Redirect(http.StatusMovedPermanently, url.LongUrl)
 }
 
+// PasswordVerify verify password and redirect
 func PasswordVerify(ctx *gin.Context) {
 	body := struct {
 		Password string `json:"password" binding:"required"`
