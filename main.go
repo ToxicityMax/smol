@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/ToxicityMax/smol/config"
 	"github.com/ToxicityMax/smol/controller"
+	"github.com/ToxicityMax/smol/helpers"
 	"github.com/ToxicityMax/smol/models"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,8 @@ func main() {
 	r.POST("/url", controller.GenShortUrl)
 	r.GET("/:slug", controller.Redirect)
 	r.POST("/:slug", controller.PasswordVerify)
+
+	helpers.StartCron()
 
 	err := r.Run()
 	if err != nil {

@@ -30,6 +30,7 @@ go.work
 /Godeps/
 
 .idea/
+.env
 db.sqlite3
 # End of https://www.toptal.com/developers/gitignore/api/go
 
