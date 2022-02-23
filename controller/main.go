@@ -70,6 +70,13 @@ func Redirect(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Url"})
 		return
 	}
+
+	today_date := time.Now()
+	if url.ExpirationDate.Before(today_date) {
+		models.DB.Delete(&url)
+		ctx.JSON(http.StatusExpectationFailed, gin.H{"error": "This url has been expired"})
+	}
+
 	if url.Password != "" {
 		ctx.JSON(http.StatusOK, gin.H{"message": "This url is protected by password. Send a post request with the password as a key",
 			"redirect_url": "/verify"})
